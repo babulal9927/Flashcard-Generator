@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+    body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+}
+
+.button-group {
+    margin-top: 20px;
+}
+
+#flashcards-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.flashcard {
+    width: 200px;
+    height: 200px;
+    perspective: 800px;
+    position: relative;
+    margin: 10px;
+    border-radius: 4px;
+    background-color: #f7f7f7;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.5s, box-shadow 0.3s;
+}
+
+.flashcard:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.flashcard .content {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.flashcard .question,
+.flashcard .answer {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    backface-visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    padding: 10px;
+}
+
+.flashcard .question {
+    background-color: #fff;
+    transform: rotateY(0deg);
+}
+
+.flashcard .answer {
+    background-color: #007bff;
+    color: #fff;
+    transform: rotateY(180deg);
+    display: none; /* Hide the answer initially */
+}
+
+.flashcard.flipped .content {
+    transform: rotateY(180deg);
+}
+
+.flashcard.flipped .question {
+    display: none; /* Hide the question when flipped */
+}
+
+.flashcard.flipped .answer {
+    display: block; /* Show the answer when flipped */
+}
+
+    </style>
+    <title>Flashcard Generator</title>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Flashcard Generator</h1>
+        <form id="flashcard-form">
+            <div class="form-group">
+                <label for="question-input">Question:</label>
+                <input type="text" id="question-input" placeholder="Enter question">
+            </div>
+            <div class="form-group">
+                <label for="answer-input">Answer:</label>
+                <input type="text" id="answer-input" placeholder="Enter answer">
+            </div>
+            <button type="submit">Add Flashcard</button>
+        </form>
+        <div id="flashcards-container"></div>
+        <div class="button-group">
+            <button id="shuffle-btn">Shuffle Flashcards</button>
+            <button id="delete-btn">Delete Flashcard</button>
+        </div>
+    </div>
+
+    <script>// Flashcard data
+        let flashcards = [];
+        
+        // Get the flashcard form and container elements
+        const flashcardForm = document.getElementById('flashcard-form');
+        const flashcardsContainer = document.getElementById('flashcards-container');
+        const shuffleButton = document.getElementById('shuffle-btn');
+        const deleteButton = document.getElementById('delete-btn');
+        
+        // Add an event listener to the form's submit event
+        flashcardForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting and refreshing the page
+        
+            // Get the values from the question and answer input fields
+            const questionInput = document.getElementById('question-input');
+            const answerInput = document.getElementById('answer-input');
+            const question = questionInput.value;
+            const answer = answerInput.value;
+        
+            // Validate that both the question and answer inputs are filled
+            if (!question || !answer) {
+                alert('Please enter both a question and an answer.');
+                return;
+            }
+        
+            // Create a new flashcard object
+            const flashcard = {
+                question: question,
+                answer: answer
+            };
+        
+            // Add the flashcard to the flashcards array
+            flashcards.push(flashcard);
+        
+            // Clear the question and answer inputs
+            questionInput.value = '';
+            answerInput.value = '';
+        
+            // Render the flashcards
+            renderFlashcards();
+        });
+        
+        // Add event listeners to the shuffle and delete buttons
+        shuffleButton.addEventListener('click', shuffleFlashcards);
+        deleteButton.addEventListener('click', deleteFlashcard);
+        
+        // Function to render the flashcards
+        function renderFlashcards() {
+            // Clear the flashcards container
+            flashcardsContainer.innerHTML = '';
+        
+            // Loop through the flashcards array and create a flashcard element for each
+            flashcards.forEach((flashcard, index) => {
+                const flashcardElement = document.createElement('div');
+                flashcardElement.classList.add('flashcard');
+                flashcardElement.innerHTML = `
+                    <div class="content">
+                        <div class="question">${flashcard.question}</div>
+                        <div class="answer">${flashcard.answer}</div>
+                    </div>
+                `;
+        
+                // Add event listener to flip the flashcard
+                const contentElement = flashcardElement.querySelector('.content');
+                contentElement.addEventListener('click', function() {
+                    flashcardElement.classList.toggle('flipped');
+                });
+        
+                // Add event listener to delete the flashcard
+                flashcardElement.addEventListener('contextmenu', function(event) {
+                    event.preventDefault();
+                    deleteFlashcard(index);
+                });
+        
+                flashcardsContainer.appendChild(flashcardElement);
+            });
+        }
+        
+        // Function to shuffle the flashcards
+        function shuffleFlashcards() {
+            flashcards = shuffleArray(flashcards);
+            renderFlashcards();
+        }
+        
+        // Function to delete a flashcard by index
+        function deleteFlashcard(index) {
+            flashcards.splice(index, 1);
+            renderFlashcards();
+        }
+        
+        // Function to shuffle an array
+        function shuffleArray(array) {
+            let currentIndex = array.length;
+            let temporaryValue;
+            let randomIndex;
+        
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex -= 1;
+        
+                temporaryValue = array[currentIndex];
+                array[currentIndex] = array[randomIndex];
+                array[randomIndex] = temporaryValue;
+            }
+        
+            return array;
+        }
+        
+        // Initial render of flashcards
+        renderFlashcards();
+        </script>
+</body>
+
+</html>
